@@ -13,5 +13,3 @@ __all__ = [
     "DIFFICULTIES",
     "DEFAULT_DIFFICULTY",
 ]
-
-#test
