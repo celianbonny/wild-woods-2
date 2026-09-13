@@ -4,9 +4,15 @@ import pygame
 
 from .helper import lerp_color
 
+# Composants d'interface réutilisables : bouton cliquable animé (Button) et
+# interrupteur à bascule (ToggleSwitch), tous deux avec des transitions de
+# couleur douces (survol/pression) plutôt que des changements instantanés.
+
 
 @final
 class Button:
+    """Bouton cliquable avec animation de survol et de pression, et son
+    (optionnel) au premier survol."""
     _hover_sound: ClassVar[pygame.mixer.Sound | None] = None
 
     def __init__(
@@ -39,6 +45,8 @@ class Button:
 
     @classmethod
     def _get_hover_sound(cls) -> pygame.mixer.Sound | None:
+        """Charge et met en cache (au niveau de la classe) le son de survol,
+        partagé par tous les boutons pour éviter de le recharger à chaque fois."""
         if cls._hover_sound is not None:
             return cls._hover_sound
 
@@ -127,6 +135,9 @@ class Button:
 
 @final
 class ToggleSwitch:
+    """Interrupteur à bascule (ex: activer/désactiver la musique) avec une
+    animation de glissement du rond entre les positions on/off."""
+
     def __init__(
         self,
         colors: dict[str, pygame.Color],
@@ -198,6 +209,7 @@ class ToggleSwitch:
         pygame.draw.circle(surface, c["knob"], (knob_x, self.rect.centery), knob_r)
 
 
+# Palette de couleurs "néon violet" utilisée par défaut pour les boutons et interrupteurs
 NEON_PURPLE: dict[str, pygame.Color] = {
     "bg": pygame.Color(22, 18, 42),  # fond normal
     "bg_hover": pygame.Color(30, 24, 64),  # fond au survol

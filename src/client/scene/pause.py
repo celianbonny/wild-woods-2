@@ -7,6 +7,11 @@ from client.ui import NEON_PURPLE, NEON_PURPLE_SWITCH, Button, ToggleSwitch
 
 from .scene import Scene
 
+# Scène de pause : s'affiche PAR-DESSUS la scène de jeu (elle n'est pas remplacée,
+# juste empilée). Comme process() renvoie False, la scène de jeu en dessous
+# ne se met plus à jour tant que la pause est active (mais reste visible en fond
+# puisqu'on ne redessine pas par-dessus tout l'écran ici).
+
 
 @final
 class PauseScene(Scene):
@@ -54,6 +59,7 @@ class PauseScene(Scene):
         pygame.mixer.music.set_volume(1.0 if enabled else 0.0)
 
     def _resume(self) -> None:
+        """Retire la scène de pause du sommet de la pile pour revenir au jeu."""
         self._engine.sm.pop()
 
     def _quit(self) -> None:
@@ -69,6 +75,7 @@ class PauseScene(Scene):
 
     @override
     def process(self, dt: float, events: list[pygame.event.Event]) -> bool:
+        # Échap ou P permettent aussi de reprendre la partie (pas seulement le bouton)
         for event in events:
             if event.type != pygame.KEYDOWN:
                 continue
@@ -80,6 +87,7 @@ class PauseScene(Scene):
             btn.update(dt, events)
             btn.draw(self._screen)
 
+        # Affiche le libellé "Musique" à côté de l'interrupteur
         label = self._font_label.render("Musique", True, pygame.Color(200, 184, 255))
         self._screen.blit(
             label,
@@ -91,4 +99,5 @@ class PauseScene(Scene):
         self._sound_switch.update(dt, events)
         self._sound_switch.draw(self._screen)
 
+        # Bloque la mise à jour de la scène de jeu tant que la pause est active
         return False

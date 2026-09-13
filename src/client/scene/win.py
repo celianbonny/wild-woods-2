@@ -8,6 +8,9 @@ from client.ui import NEON_PURPLE, Button
 
 from .scene import Scene
 
+# Scène affichée quand les joueurs remportent la partie (antidote synthétisé) :
+# écran de victoire avec boutons pour revenir au menu ou quitter.
+
 
 @final
 class WinScene(Scene):
@@ -17,7 +20,7 @@ class WinScene(Scene):
         super().__init__()
         self._screen = engine.screen
         self._engine = engine
-        self._on_menu = on_menu
+        self._on_menu = on_menu  # Callback pour revenir au menu principal
 
         self._font_title = pygame.font.Font(
             "assets/fonts/Instrument_Serif/InstrumentSerif-Italic.ttf", 150
@@ -46,9 +49,11 @@ class WinScene(Scene):
 
     @override
     def process(self, dt: float, events: list[pygame.event.Event]) -> bool:
+        # Fond vert très sombre pour l'ambiance "victoire"
         self._screen.fill((0, 20, 5))
         w, h = self._screen.get_size()
 
+        # Titre "Victoire !" avec ombre portée dorée
         shadow = self._font_title.render("Victoire !", True, (100, 70, 0))
         self._screen.blit(shadow, shadow.get_rect(center=(w // 2 + 5, h // 2 - 145)))
 
@@ -64,4 +69,5 @@ class WinScene(Scene):
             btn.update(dt, events)
             btn.draw(self._screen)
 
+        # Bloque la propagation vers les scènes en dessous
         return False

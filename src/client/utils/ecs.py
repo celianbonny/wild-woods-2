@@ -4,6 +4,13 @@ from typing import overload
 
 import esper
 
+# Petit "wrapper" typé autour de esper.get_components().
+# La bibliothèque esper n'est pas fortement typée (elle accepte un nombre variable
+# de types de composants), ce qui empêche les outils d'analyse statique de connaître
+# le type exact du résultat. Les surcharges (@overload) ci-dessous permettent de
+# déclarer explicitement le type de retour pour 5, 6, 7 ou 8 composants,
+# afin que l'auto-complétion et le vérificateur de types fonctionnent correctement.
+
 
 @overload
 def get_components[C1, C2, C3, C4, C5](
@@ -50,4 +57,6 @@ def get_components[C1, C2, C3, C4, C5, C6, C7, C8](
 
 
 def get_components(*args: type) -> list[tuple[int, tuple[object, ...]]]:
+    # Implémentation réelle : on se contente de déléguer à esper,
+    # les surcharges ci-dessus ne servent qu'à typer le résultat
     return esper.get_components(*args)

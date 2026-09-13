@@ -11,6 +11,10 @@ from client.ui.components import NEON_PURPLE, Button
 
 from .scene import Scene
 
+# Scène de la boutique du campement : permet au joueur de dépenser son or
+# pour améliorer ses PV, la cadence de tir ou les dégâts de son arme,
+# ou pour déclencher la victoire une fois assez d'or accumulé.
+
 _GOLD = pygame.Color(255, 215, 0)
 _WHITE = pygame.Color(255, 255, 255)
 _GRAY = pygame.Color(160, 160, 180)
@@ -20,13 +24,15 @@ _RED = pygame.Color(200, 70, 70)
 
 @dataclass
 class _Upgrade:
+    """Représente une amélioration achetable dans la boutique."""
     label: str
     desc: str
-    base_cost: int
-    increment: int
-    count: int = field(default=0)
+    base_cost: int      # Coût de la première amélioration
+    increment: int       # Augmentation du coût à chaque nouvel achat
+    count: int = field(default=0)  # Nombre de fois déjà achetée
 
     def cost(self) -> int:
+        """Coût de la prochaine amélioration (augmente à chaque achat)."""
         return self.base_cost + self.count * self.increment
 
 
@@ -47,9 +53,12 @@ class ShopScene(Scene):
         self._hp = hp
         self._weapon = weapon
         self._inv = inv
-        self._on_win = on_win
+        self._on_win = on_win  # Callback appelé quand le joueur "achète" la victoire
+        # Compteurs d'achats persistants, partagés avec la scène de jeu, afin que
+        # les prix restent cohérents si le joueur quitte puis rouvre la boutique
         self._purchase_counts = purchase_counts
 
+        # Définit les 3 améliorations disponibles, avec leur nombre d'achats déjà réalisés
         self._upgrades = [
             _Upgrade("+1 Vie", "Augmente les PV max de 1", 5, 1, purchase_counts[0]),
             _Upgrade(
@@ -67,8 +76,11 @@ class ShopScene(Scene):
         w, h = self._screen.get_size()
 
         # Capture the rendered game frame — push happens after esper.process so it's fresh
+        # (on capture une image du jeu en fond, pour donner l'impression que la boutique
+        # s'ouvre "par-dessus" la partie en cours, sans redessiner le monde du jeu)
         self._bg = engine.screen.copy()
 
+        # Voile semi-transparent sombre par-dessus l'image du jeu, pour assombrir le fond
         self._overlay = pygame.Surface((w, h), pygame.SRCALPHA)
         self._overlay.fill((10, 5, 20, 160))
 
@@ -78,6 +90,8 @@ class ShopScene(Scene):
         self._font_gold = pygame.font.SysFont("Arial", 24, bold=True)
         self._font_hint = pygame.font.SysFont("Arial", 14)
 
+        # Un bouton "Acheter" par amélioration, chacun sachant quel index il concerne
+        # grâce à functools.partial
         self._btns = [
             Button("Acheter", NEON_PURPLE, 14, 8, 8, 18, on_click=partial(self._buy, i))
             for i in range(3)
@@ -96,6 +110,7 @@ class ShopScene(Scene):
         self._btn_win.rect.height = 70
 
     def _buy(self, i: int) -> None:
+        """Achète l'amélioration d'index `i` si le joueur a assez d'or."""
         upg = self._upgrades[i]
         gold = self._inv.count(ItemKind.GOLD)
         if gold < upg.cost():
@@ -103,15 +118,20 @@ class ShopScene(Scene):
         self._inv.counts[ItemKind.GOLD] = gold - upg.cost()
         upg.count += 1
         self._purchase_counts[i] = upg.count
+        # Applique l'effet réel de l'amélioration selon son index
         if i == 0:
+            # +1 Vie : augmente à la fois le maximum et les PV actuels
             self._hp.max += 1
             self._hp.current += 1
         elif i == 1:
+            # Cadence +10% : réduit le temps de recharge de 10% (minimum 0.05s)
             self._weapon.cooldown_max = max(0.05, self._weapon.cooldown_max * 0.9)
         else:
+            # Dégâts +25% : augmente les dégâts de l'arme de 25% (minimum 1)
             self._weapon.damage = max(1, int(self._weapon.damage * 1.25))
 
     def _buy_win(self) -> None:
+        """Déclenche la victoire si le joueur possède au moins 100 pièces d'or."""
         gold = self._inv.count(ItemKind.GOLD)
         if gold < 100:
             return
@@ -126,11 +146,13 @@ class ShopScene(Scene):
     def process(self, dt: float, events: list[pygame.event.Event]) -> bool:
         w, h = self._screen.get_size()
 
+        # La touche E permet de fermer la boutique et de revenir à la partie
         for event in events:
             if event.type == pygame.KEYDOWN and cast(int, event.key) == pygame.K_e:
                 self._engine.sm.pop()
                 return False
 
+        # Dessine le fond figé du jeu, puis le voile sombre par-dessus
         self._screen.blit(self._bg, (0, 0))
         self._screen.blit(self._overlay, (0, 0))
 
@@ -144,6 +166,7 @@ class ShopScene(Scene):
         self._screen.blit(gold_s, gold_s.get_rect(center=(w // 2, 115)))
 
         # Layout zones
+        # Calcule la disposition : 3 cartes d'amélioration en haut, bouton de victoire en bas
         win_h = 100
         win_top = h - win_h - 20
         card_top = 150
@@ -175,6 +198,7 @@ class ShopScene(Scene):
             self._screen.blit(count_s, count_s.get_rect(centerx=cx, top=card_top + 85))
 
             # Cost (colored by affordability)
+            # Le prix s'affiche en doré si le joueur peut se le permettre, en rouge sinon
             cost = upg.cost()
             cost_s = self._font_name.render(
                 f"{cost} pièces", True, _GOLD if gold >= cost else _RED

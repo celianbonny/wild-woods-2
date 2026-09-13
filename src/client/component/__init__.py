@@ -1,3 +1,6 @@
+# Point d'entrée du package "component" : ré-expose tous les composants ECS
+# du jeu pour pouvoir écrire "from client.component import X" plutôt que
+# de devoir connaître le sous-module exact de chaque composant.
 from .ai import AI, AIState, PatrolRuntime, PatrolSettings
 from .damage import DamageDealer, Health, Invincibility
 from .gameplay import (

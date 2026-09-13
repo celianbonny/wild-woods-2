@@ -1,3 +1,5 @@
+# Point d'entrée du package "processor" : ré-expose tous les processeurs (systèmes ECS)
+# du jeu pour un import simplifié depuis "client.processor".
 from .animation import AnimationProc, DirectionalAnimationProc
 from .brain import BrainProc
 from .campfire import CampfireProc

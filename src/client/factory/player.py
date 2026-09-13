@@ -19,8 +19,13 @@ from client.component import (
     Weapon,
 )
 
+# Fabrique permettant de créer l'entité joueur avec toutes ses animations,
+# son arme de départ et ses composants de gameplay.
+
 
 def _load_sequence(path_template: str, count: int) -> list[pygame.Surface]:
+    """Charge une séquence d'images numérotées de 1 à `count` à partir d'un modèle
+    de chemin contenant "{i}" (ex: "sprites/{i}.png")."""
     return [
         pygame.image.load(path_template.format(i=i)).convert_alpha()
         for i in range(1, count + 1)
@@ -28,7 +33,11 @@ def _load_sequence(path_template: str, count: int) -> list[pygame.Surface]:
 
 
 def create_player(pos: Position, health: int = 5):
+    """Crée l'entité joueur à la position `pos`, avec `health` points de vie."""
     directions = ["up", "down", "left", "right"]
+    # Correspondance entre le nom de direction logique et le dossier d'assets réel
+    # (les dossiers "down" et "left" du jeu de sprites sont inversés par rapport
+    # à ce qu'on attendrait, d'où cette table de correspondance)
     dir_map = {
         "up": "up",
         "down": "left",
@@ -51,14 +60,17 @@ def create_player(pos: Position, health: int = 5):
             frames=idle_frames, frame_duration=0.3, loop=True
         )
 
+    # Animation de mort (jouée une seule fois, ne boucle pas)
     death_frames = _load_sequence("assets/sprite/player/hurt/up/{i}.png", 6)
     clips["death_up"] = AnimationClip(
         frames=death_frames, frame_duration=0.12, loop=False
     )
 
     surface = clips["idle_down"].frames[0]
+    # Le joueur commence toujours avec un pistolet de base
     pistolet = Weapon(cooldown_max=0.8, bullet_speed=600.0, damage=10)
 
+    # Ajuste la hitbox sur les pixels réellement visibles du sprite de départ
     true_rect = surface.get_bounding_rect()
     offset_x = (true_rect.x + true_rect.width / 2) - surface.get_width() / 2
     offset_y = (true_rect.y + true_rect.height / 2) - surface.get_height() / 2

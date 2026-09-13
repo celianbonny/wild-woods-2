@@ -24,8 +24,12 @@ from client.component import (
     Velocity,
 )
 
+# Fabrique permettant de créer un ennemi ("bandit"/zombie) avec son IA,
+# ses animations et sa table de butin.
+
 
 def _load_sequence(path_template: str, count: int) -> list[pygame.Surface]:
+    """Charge une séquence d'images numérotées de 1 à `count`."""
     return [
         pygame.image.load(path_template.format(i=i)).convert_alpha()
         for i in range(1, count + 1)
@@ -33,6 +37,8 @@ def _load_sequence(path_template: str, count: int) -> list[pygame.Surface]:
 
 
 def create_bandit(pos: Position, difficulty: int = 0):
+    """Crée un ennemi à la position `pos`. Le paramètre `difficulty` augmente
+    sa vitesse et ses points de vie (utilisé pour faire progresser la difficulté)."""
     directions = ["up", "down", "left", "right"]
     dir_map = {
         "up": "up",
@@ -41,6 +47,7 @@ def create_bandit(pos: Position, difficulty: int = 0):
         "right": "right",
     }
 
+    # Charge uniquement les animations de course (pas d'animation "idle" pour cet ennemi)
     clips: dict[str, AnimationClip] = {}
     for direction in directions:
         run_frames = _load_sequence(
@@ -52,6 +59,7 @@ def create_bandit(pos: Position, difficulty: int = 0):
         )
 
     surface = clips["run_down"].frames[0]
+    # Table de butin : peut potentiellement lâcher soin, membres et/ou or (indépendamment)
     entries = [
         (ItemKind.HEALTH, 0.1),
         (ItemKind.LIMBS, 0.1),
@@ -65,6 +73,7 @@ def create_bandit(pos: Position, difficulty: int = 0):
     esper.create_entity(
         pos,
         Velocity(0, 0),
+        # Vitesse et PV augmentent avec le paramètre de difficulté
         Speed(200 + difficulty * 2),
         Health(10 + difficulty, 10 + difficulty),
         DamageDealer(amount=1.0),
@@ -78,6 +87,7 @@ def create_bandit(pos: Position, difficulty: int = 0):
         EnemyTag(),
         AI(),
         Targeting(range=200),
+        # Paramètres de patrouille aléatoires : rend chaque ennemi légèrement différent
         PatrolSettings.from_random(),
         PatrolRuntime(),
         LootTable(LootTableKind.LOOT_MANY, entries),

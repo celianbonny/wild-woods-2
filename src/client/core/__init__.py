@@ -1,3 +1,5 @@
+# Point d'entrée du package "core" : ré-expose les éléments essentiels du moteur
+# (moteur de jeu, événements, gestion du fond, difficultés...) pour un import simplifié.
 from .background import TILE_SIZE, get_bg_data
 from .difficulty import DEFAULT_DIFFICULTY, DIFFICULTIES, Difficulty
 from .engine import Engine, StopCode
